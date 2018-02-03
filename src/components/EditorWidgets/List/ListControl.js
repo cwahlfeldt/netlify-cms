@@ -9,7 +9,8 @@ import { Icon, ListItemTopBar } from 'UI';
 import ObjectControl from 'EditorWidgets/Object/ObjectControl';
 
 function ListItem(props) {
-  return <div {...props} className={`list-item ${ props.className || '' }`}>{props.children}</div>;
+  let className = props.className || '';
+  return <div {...props} className={'list-item ' + className }>{props.children}</div>;
 }
 ListItem.propTypes = {
   className: PropTypes.string,

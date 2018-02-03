@@ -378,7 +378,9 @@ function convertNode(node, children, shortcodePlugins) {
     case 'table':
     case 'table-row':
     case 'table-cell': {
-      return u(typeMap[node.type], children);
+      const myNode = u(typeMap[node.type], children);
+//      console.log(myNode);
+      return myNode;
     }
 
     /**

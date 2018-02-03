@@ -9,7 +9,7 @@ export default function remarkWrapHtml() {
   function transform(tree) {
     tree.children = tree.children.map(node => {
       if (node.type === 'html') {
-        return u('paragraph', [node]);
+        return u('blockquote', [node]);
       }
       return node;
     });

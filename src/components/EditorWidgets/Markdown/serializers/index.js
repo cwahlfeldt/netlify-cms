@@ -7,6 +7,7 @@ import remarkToRehype from 'remark-rehype';
 import rehypeToHtml from 'rehype-stringify';
 import htmlToRehype from 'rehype-parse';
 import rehypeToRemark from 'rehype-remark';
+import inspect from 'unist-util-inspect';
 import { getEditorComponents } from 'Lib/registry';
 import remarkToRehypeShortcodes from './remarkRehypeShortcodes';
 import rehypePaperEmoji from './rehypePaperEmoji';
@@ -56,18 +57,24 @@ import slateToRemark from './slateRemark';
  *   for serialization to/from Slate's Raw AST and MDAST.
  */
 
+function log() {
+  return console.log(this.Parser);
+}
 
 /**
  * Deserialize a Markdown string to an MDAST.
  */
-export const markdownToRemark = markdown => {
+export function markdownToRemark(markdown) {
   /**
    * Parse the Markdown string input to an MDAST.
    */
   const parsed = unified()
-    .use(markdownToRemarkPlugin, { fences: true, commonmark: true })
+    .use(markdownToRemarkPlugin, {
+      fences: true,
+      commonmark: true,
+    })
     .use(markdownToRemarkRemoveTokenizers, { inlineTokenizers: ['url'] })
-    .use(remarkAllowHtmlEntities)
+    .use(remarkToRehype)
     .parse(markdown);
 
   /**
@@ -78,6 +85,8 @@ export const markdownToRemark = markdown => {
     .use(remarkImagesToText)
     .use(remarkShortcodes, { plugins: getEditorComponents() })
     .runSync(parsed);
+
+  //cleanUpQuotes(result);
 
   return result;
 };
@@ -92,6 +101,16 @@ function markdownToRemarkRemoveTokenizers({ inlineTokenizers }) {
   });
 }
 
+function cleanUpQuotes(mdast) {
+  mdast.children.forEach(child => {i
+    if (child.type === 'blockquote') {
+      if (child.children.length) {
+        child.children[0].type = 'text';
+        console.log(child.children[0]);
+      }
+    }
+  });
+}
 
 /**
  * Serialize an MDAST to a Markdown string.
@@ -149,18 +168,33 @@ export const remarkToMarkdown = obj => {
 
 /**
  * Convert Markdown to HTML.
+ * @TODO This is issue #761
+ * when writing inital editor markdown this shows a blockquote > text_node
+ * when revisiting the html changes to blockquote > p > text_node
  */
 export const markdownToHtml = (markdown, getAsset) => {
   const mdast = markdownToRemark(markdown);
 
+  //console.log(mdast)
+
   const hast = unified()
     .use(remarkToRehypeShortcodes, { plugins: getEditorComponents(), getAsset })
-    .use(remarkToRehype, { allowDangerousHTML: true })
+    .use(remarkToRehype, {
+      allowDangerousHTML: true,
+      commonmark: true,
+    })
     .runSync(mdast);
 
   const html = unified()
-    .use(rehypeToHtml, { allowDangerousHTML: true, allowDangerousCharacters: true })
-    .stringify(hast);
+    .use(rehypeToHtml, {
+      allowDangerousHTML: true,
+      allowDangerousCharacters: true,
+    })
+    .stringify(hast, {
+      quoteSmart: true,
+      closeSelfClosing: true,
+      omitOptionalTags: true,
+    });
 
   return html;
 }
